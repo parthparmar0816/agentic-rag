@@ -1,0 +1,9 @@
+#python 
+__pycache__
+
+#environments
+venv
+
+#Vector DB and Temp
+db 
+temp
