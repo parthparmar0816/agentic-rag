@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException
 from app.gen_embeddings import GenEmbeddings
 from langchain.messages import AIMessage, HumanMessage, SystemMessage
 from app.schemas import ChatInput, ChatOutput
-from app.rag_agent import rag_agent
+from app.rag_agent import make_agent
 
 
 app = FastAPI()
@@ -34,6 +34,7 @@ async def query_embeddings(input: ChatInput) -> ChatOutput:
         user_message = HumanMessage(content=input.message)
         print(user_message)
         input = {"messages": [{"role": "user", "content": input.message}]}
+        rag_agent = make_agent()
         response = rag_agent.invoke(input)
         # Extract AI final response
         ai_msg = response["messages"][-1]   # Last message is AI

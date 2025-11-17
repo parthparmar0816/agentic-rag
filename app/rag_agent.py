@@ -8,7 +8,7 @@ from langchain_ollama import ChatOllama
 
 @tool
 def retrieve_doc(message):
-    """Retrieve the most relevant documents from the vector database."""
+    """Retrieve the most relevant documents from the vector database for the given content always"""
     gen_embeddings = GenEmbeddings("")
     print("Retrieving documents...")
     db = gen_embeddings.vector_store()
@@ -21,19 +21,46 @@ def retrieve_doc(message):
     )
     return serialized, retrieve_docs
 
-llm = ChatOllama(
-    model="qwen3:1.7b",
-    temperature=0,
-)
+@tool
+def financial_summary(message: str):
+    """
+    Always Retrieve relevant financial context and create a financial summary.
+    """
+    # Step 1: Retrieve documents
+    print("Financial summary...")
+    gen_embeddings = GenEmbeddings("")
+    db = gen_embeddings.vector_store()
+    retrieved_docs = db.similarity_search(message, k=4)
 
-tools = [retrieve_doc]
-prompt = (
-    "You have access to a tool that retrieves context from a pdf file called retrieve_doc"
-    "Use the tool to help answer user queries always"
-)
+    combined_content = "\n\n".join(doc.page_content for doc in retrieved_docs)
 
+    # Step 2: Use LLM to summarize
+    llm = ChatOllama(
+        model="qwen3:1.7b",
+        temperature=0,
+    )
 
-rag_agent = create_agent(llm, tools, system_prompt=prompt)
+    summary = llm.invoke(
+        [
+            SystemMessage(content="Summarize the following into a concise, accurate financial summary."),
+            {"role": "user", "content": combined_content}
+        ]
+    )
+
+    return summary.content
+
+def make_agent():
+    llm = ChatOllama(
+        model="qwen3:1.7b",
+        temperature=0,
+    )
+    tools = [retrieve_doc, financial_summary]
+    prompt = (
+        "You have access to a tool that retrieves context from a pdf file called retrieve_doc or financial_summary.\n"
+        "Use the tool to help answer user queries always"
+    )
+
+    return create_agent(llm, tools, system_prompt=prompt)
 
 
 
